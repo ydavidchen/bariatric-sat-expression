@@ -1,4 +1,6 @@
-# Gene expression analysis of subcutaneous adipose tissue (SAT) exposed to bariatric weight-loss surgery
+# Gene expression analysis of subcutaneous adipose tissue (SAT) exposed to bariatric surgery
+
+Status: Peer-reviewed and revised
 
 Author: David Chen, Ph.D.
 

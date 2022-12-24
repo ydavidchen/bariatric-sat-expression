@@ -1,5 +1,6 @@
 # Unsupervised Analyses & Visualizations
 # Laste update: 10/26/2022
+# Revision: 12/20/2022
 
 rm(list=ls())
 library(matrixStats)
@@ -10,22 +11,22 @@ library(reshape2)
 library(pheatmap)
 
 DIR <- "~/Documents/datasets/Bariatric/"
-COL_ATTR <- c("Accession", "Dataset", "Status")
+COL_ATTR <- c("Accession", "Dataset", "PostOP")
 CL_PARAMS <- c("manhattan", "ward.D")
 
 HEAT_COLS <- colorRampPalette(c("blue","lightgray","red"))(1024)
-
 ANN_COLOR <- list(
-  Status = c(`1`="black", `0`="lightgray"),
+  PostOP = c(Yes="black", No="lightgray"),
   Dataset = c(GSE29411="lightgray",GSE42715="gray90", GSE65540="gray60",GSE66921="dimgray",GSE199063="gray30")
 )
 
+FILL_SCALE <- scale_fill_brewer(palette="Dark2", direction=-1)
+PTCOL_SCALE <- scale_color_brewer(palette="Dark2", direction=-1) 
 THEME_PCA <- theme(axis.text=element_text(size=15,color="black"), 
                    axis.title=element_text(size=20,color="black"),
                    legend.text=element_text(size=20,color="black"),
                    legend.title=element_text(size=20,color="black"),
                    legend.position="top")
-
 THEME_BOX <- theme(axis.text=element_text(size=20,color="black"), 
                    axis.title.y=element_text(size=20,color="black"),
                    axis.title.x=element_blank(),
@@ -42,6 +43,8 @@ run2x2 <- function(var1, var2, data, flip1=FALSE, flip2=FALSE, test=FALSE) {
 }
 
 load(paste0(DIR,"calculated_profiles/post_combat.RData"))
+meta$PostOP <- ifelse(meta$Status==1, "Yes", "No")
+meta$PostOP <- factor(meta$PostOP, levels=c("Yes","No"))
 
 # ----------------- Principal Component Analysis -----------------
 wrapper_pca <- function(dat, pltSlope=NULL) {
@@ -51,9 +54,9 @@ wrapper_pca <- function(dat, pltSlope=NULL) {
   resPca <- scale(resPca) #columnwise
   resPca <- as.data.frame(resPca)
   resPca$Accession <- rownames(resPca)
-  resPca <- merge(meta[,COL_ATTR], resPca, by="Accession")
+  resPca <- merge(meta[ , COL_ATTR], resPca, by="Accession")
   
-  ## 2D visualization:
+  ## 2D visualizations:
   print(
     ggplot(resPca, aes(PC1, PC2, color=Dataset)) + 
     geom_point(size=3.5, alpha=0.75) + 
@@ -61,9 +64,9 @@ wrapper_pca <- function(dat, pltSlope=NULL) {
     THEME_PCA
   )
   
-  pltS <- ggplot(resPca, aes(PC1, PC2, color=Status)) + 
+  pltS <- ggplot(resPca, aes(PC1, PC2, color=PostOP)) + 
     geom_point(size=3.5, alpha=0.75) + 
-    scale_color_brewer(palette="Dark2") +
+    PTCOL_SCALE +
     theme_bw() + 
     THEME_PCA
   
@@ -71,27 +74,27 @@ wrapper_pca <- function(dat, pltSlope=NULL) {
   
   ## Boxplot:
   mResPca <- melt(resPca)
-  pltB <- ggplot(mResPca, aes(variable, value, fill=Status)) +
+  pltB <- ggplot(mResPca, aes(variable, value, fill=PostOP)) +
     geom_boxplot(outlier.colour=NA, alpha=0.5) +
-    geom_jitter(aes(color=Status), alpha=0.5, position=position_jitterdodge()) +
-    scale_color_brewer(palette="Dark2") +
-    scale_fill_brewer(palette="Dark2") +
+    geom_jitter(aes(color=PostOP), alpha=0.5, position=position_jitterdodge()) +
+    PTCOL_SCALE +
+    FILL_SCALE +
     theme_bw() +
     THEME_BOX
 
   print( gridExtra::grid.arrange(grobs=list(pltS,pltB), widths=c(0.62,0.38)) )
   
-  print( t.test(resPca$PC1 ~ resPca$Status) )
-  print( t.test(resPca$PC2 ~ resPca$Status) )
+  print( t.test(resPca$PC1 ~ resPca$PostOP) )
+  print( t.test(resPca$PC2 ~ resPca$PostOP) )
   return(resPca)
 }
 
 pcaRes <- wrapper_pca(t(expr), -1)
 
-## Decision function: PC2 = -PC1
+## Unsupervised Decision Function: PC2 = -PC1
 pcaRes$Group <- as.integer(pcaRes$PC2 > -pcaRes$PC1)
 table(pcaRes$Group)
-run2x2("Group","Status", pcaRes, FALSE, TRUE, TRUE)
+run2x2("Group","PostOP", pcaRes, FALSE, TRUE, TRUE)
 
 # ------------------------- Heatmap & Association Tests on Most Variable -------------------------
 ## Variance distribution:
@@ -105,7 +108,7 @@ eSub <- expr[sampSds >= thresh, ]
 
 hm_annot <- data.frame(
   row.names = meta$Accession,
-  Status = meta$Status,
+  PostOP = meta$PostOP,
   Dataset = meta$Dataset
 )
 
@@ -147,6 +150,6 @@ wrapper_hclust <- function(mat, num_cl=2, rowname="Accession") {
 res_cl <- wrapper_hclust(eSub, 2)
 res_cl <- merge(res_cl, meta, by="Accession")
 
-table(res_cl$Cluster) #rename cluster if necessary
 res_cl$ClusterRenamed <-  ifelse(res_cl$Cluster==2, "High", "Low")
-run2x2("ClusterRenamed","Status", res_cl, TRUE, TRUE, TRUE)
+table(res_cl$ClusterRenamed)
+run2x2("ClusterRenamed","PostOP", res_cl, TRUE, TRUE, TRUE)
