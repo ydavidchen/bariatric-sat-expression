@@ -10,17 +10,24 @@ Bariatric surgery is currently the most effective approach to achieve weight los
 
 ## Design
 
-To be added
+Five existing datasets from Gene Expression Omnibus were re-processed, joined, and variance-filtered. The resulting dataset has 5,000 genes across 239 SATs (126 post-surgery, 111 pre-surgery/controls).
 
-## R Code
+Unsupervised and supervised analyses surrounding pre/post-bariatric surgery status were then performed.
 
-R code for the complete analysis, end-to-end, is available here.
+## Source Code
+
+End-to-end R code is available here.
 
 * Individual dataset cleaning
 * Combined data processing, normalization, and batch-effect removal
-* Unsupervised analysis
+* Unsupervised analyses
 * Supervised analysis
 
+Downstream biological interpretations (Gene Ontology and KEGG) are performed on the [WebGestalt server](www.webgestalt.org).
+
+## Supplemental Results
+
+The complete list of genes tested for differential expression can be found in _supplemental results_ subdirectory.
 
 Copy right &copy; Y. David Chen. All rights reserved.
 
